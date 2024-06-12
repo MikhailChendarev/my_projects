@@ -1,0 +1,104 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-site-table
+      author: postgres
+      changes:
+        - createTable:
+            tableName: site
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(255)
+              - column:
+                  name: status_time
+                  type: timestamp
+              - column:
+                  name: last_error
+                  type: text
+              - column:
+                  name: url
+                  type: varchar(255)
+              - column:
+                  name: name
+                  type: varchar(255)
+  - changeSet:
+      id: create-page-table
+      author: postgres
+      changes:
+        - createTable:
+            tableName: page
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: path
+                  type: text
+              - column:
+                  name: code
+                  type: integer
+              - column:
+                  name: content
+                  type: text
+              - column:
+                  name: site_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_page_site
+                    references: site(id)
+  - changeSet:
+      id: create-lemma-table
+      author: postgres
+      changes:
+        - createTable:
+            tableName: lemma
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: lemma
+                  type: varchar(255)
+              - column:
+                  name: frequency
+                  type: integer
+  - changeSet:
+      id: create-index-table
+      author: postgres
+      changes:
+        - createTable:
+            tableName: index
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: page_id
+                  type: bigserial
+                  constraints:
+                    foreignKeyName: fk_index_page
+                    references: page(id)
+              - column:
+                  name: lemma_id
+                  type: bigserial
+                  constraints:
+                    foreignKeyName: fk_index_lemma
+                    references: lemma(id)
+              - column:
+                  name: rating
+                  type: float
