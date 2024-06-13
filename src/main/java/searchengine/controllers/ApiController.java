@@ -53,9 +53,10 @@ public class ApiController {
 
     @GetMapping("/search")
     public List<SearchResultRs> search(@RequestParam String query,
+                                       @RequestParam(required = false) String site,
                                        @RequestParam(required = false, defaultValue = "0") int offset,
                                        @RequestParam(required = false, defaultValue = "20") int limit) {
-        return searchService.performSearch(query, offset, limit);
+        return searchService.performSearch(query, site, offset, limit);
     }
 }
 

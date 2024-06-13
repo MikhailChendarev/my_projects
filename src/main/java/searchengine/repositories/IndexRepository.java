@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import searchengine.model.Index;
 import searchengine.model.Lemma;
 import searchengine.model.Page;
+import searchengine.model.SiteModel;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,4 +21,6 @@ public interface IndexRepository extends JpaRepository<Index, Long> {
     Collection<Index> findByLemmaAndPageIdIn(Lemma lemma, List<Long> pageIds);
     @Query("SELECT i.page FROM Index i WHERE i.lemma.lemma = :lemma")
     List<Page> findPagesByLemma(@Param("lemma") String lemma);
+    @Query("SELECT i.page FROM Index i WHERE i.lemma = :lemma AND i.page.siteModel = :siteModel")
+    List<Page> findPagesByLemmaAndSiteModel(@Param("lemma") Lemma lemma, @Param("siteModel") SiteModel siteModel);
 }

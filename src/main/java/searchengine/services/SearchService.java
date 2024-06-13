@@ -6,32 +6,36 @@ import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 import searchengine.dto.SearchResultRs;
 import searchengine.model.Index;
+import searchengine.model.Lemma;
 import searchengine.model.Page;
+import searchengine.model.SiteModel;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
+import searchengine.repositories.SiteRepository;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class SearchService {
+    private final SiteRepository siteRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
     private final TextProcessorService textProcessorService;
 
-    public List<SearchResultRs> performSearch(String query, int offset, int limit) {
+    public List<SearchResultRs> performSearch(String query, String site, int offset, int limit) {
         Map<String, Integer> lemmas = textProcessorService.getLemmas(query);
         List<String> sortedLemmas = lemmas.keySet().stream().toList();
         if (sortedLemmas.isEmpty()) {
             return new ArrayList<>();
         }
-        List<Page> pages = findPagesByLemma(sortedLemmas.get(0));
-        for (int i = 1; i < sortedLemmas.size(); i++) {
-            List<Page> lemmaPages = findPagesByLemma(sortedLemmas.get(i));
-            pages.retainAll(lemmaPages);
-            if (pages.isEmpty()) {
-                return new ArrayList<>();
-            }
+        List<Page> pages;
+        if (site == null) {
+            pages = getPagesByLemmas(sortedLemmas);
+        } else {
+            SiteModel siteModel = siteRepository.findByUrl(site);
+            pages = getPagesByLemmasAndSite(sortedLemmas, siteModel);
         }
         if (pages.isEmpty()) {
             return new ArrayList<>();
@@ -40,6 +44,20 @@ public class SearchService {
         results.sort(Comparator.comparing(SearchResultRs::getRelevance).reversed());
         int toIndex = Math.min(results.size(), offset + limit);
         return results.subList(offset, toIndex);
+    }
+
+    private List<Page> getPagesByLemmas(List<String> lemmas) {
+        return lemmas.stream()
+                .filter(lemma -> lemmaRepository.findByLemma(lemma) != null)
+                .flatMap(lemma -> indexRepository.findPagesByLemma(lemma).stream())
+                .collect(Collectors.toList());
+    }
+
+    private List<Page> getPagesByLemmasAndSite(List<String> lemmas, SiteModel siteModel) {
+        return lemmas.stream()
+                .map(lemma -> lemmaRepository.findByLemma(lemma))
+                .flatMap(lemma -> indexRepository.findPagesByLemmaAndSiteModel(lemma, siteModel).stream())
+                .collect(Collectors.toList());
     }
 
     private List<SearchResultRs> calculateRelevance(List<Page> pages, Map<String, Integer> lemmas) {
@@ -91,9 +109,5 @@ public class SearchService {
             if (snippetLength > 150) break;
         }
         return snippetBuilder.toString().trim();
-    }
-
-    private List<Page> findPagesByLemma(String lemma) {
-        return indexRepository.findPagesByLemma(lemma);
     }
 }
