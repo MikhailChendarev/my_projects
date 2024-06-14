@@ -68,9 +68,12 @@ public class SearchService {
             for (Map.Entry<String, Integer> entry : lemmas.entrySet()) {
                 String lemma = entry.getKey();
                 int frequency = entry.getValue();
-                Index index = indexRepository.findByPageAndLemma(page, lemmaRepository.findByLemma(lemma));
-                if (index != null) {
-                    relevance += index.getRating() * frequency;
+                Lemma lemmaEntity = lemmaRepository.findByLemma(lemma);
+                if (lemmaEntity != null) {
+                    List<Index> indices = indexRepository.findByPageAndLemma(page, lemmaEntity);
+                    for (Index index : indices) {
+                        relevance += index.getRating() * frequency;
+                    }
                 }
             }
             maxRelevance = Math.max(maxRelevance, relevance);

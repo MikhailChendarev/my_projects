@@ -17,7 +17,7 @@ public interface IndexRepository extends JpaRepository<Index, Long> {
     List<Index> findByPage(Page page);
     int countByLemma(Lemma lemma);
     int countByPageIn(List<Page> pages);
-    Index findByPageAndLemma(Page page, Lemma lemma);
+    List<Index> findByPageAndLemma(Page page, Lemma lemma);
     Collection<Index> findByLemmaAndPageIdIn(Lemma lemma, List<Long> pageIds);
     @Query("SELECT i.page FROM Index i WHERE i.lemma.lemma = :lemma")
     List<Page> findPagesByLemma(@Param("lemma") String lemma);
