@@ -35,7 +35,11 @@ public class SearchService {
             pages = getPagesByLemmas(sortedLemmas);
         } else {
             SiteModel siteModel = siteRepository.findByUrl(site);
-            pages = getPagesByLemmasAndSite(sortedLemmas, siteModel);
+            if (siteModel != null) {
+                pages = getPagesByLemmasAndSite(sortedLemmas, siteModel);
+            } else {
+                throw new IllegalArgumentException("Сайт не найден: " + site);
+            }
         }
         if (pages.isEmpty()) {
             return new ArrayList<>();
@@ -43,7 +47,7 @@ public class SearchService {
         List<SearchResultRs> results = calculateRelevance(pages, lemmas);
         results.sort(Comparator.comparing(SearchResultRs::getRelevance).reversed());
         int toIndex = Math.min(results.size(), offset + limit);
-        return results.subList(offset, toIndex);
+        return results.subList(Math.min(offset, results.size()), toIndex);
     }
 
     private List<Page> getPagesByLemmas(List<String> lemmas) {
