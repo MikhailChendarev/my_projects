@@ -131,17 +131,18 @@ public class SiteService {
         return siteModel;
     }
 
-    public void indexPage(String url) {
+    public Optional<SiteModel> indexPage(String url) {
         Optional<String> baseUrlOpt = sitesList.getSites().stream()
                 .map(Site::getUrl)
                 .filter(url::startsWith)
                 .findFirst();
         if (!baseUrlOpt.isPresent()) {
-            throw new IllegalArgumentException("Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
+            return Optional.empty();
         }
         String baseUrl = baseUrlOpt.get();
         SiteModel siteModel = siteRepository.findByUrl(baseUrl);
         pageService.processPage(siteModel, url);
+        return Optional.of(siteModel);
     }
 }
 

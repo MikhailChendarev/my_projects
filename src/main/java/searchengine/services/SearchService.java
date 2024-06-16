@@ -23,9 +23,7 @@ public class SearchService {
     private final TextProcessorService textProcessorService;
     private final RelevanceService relevanceService;
 
-
     public SearchDto performSearch(String query, String site, int offset, int limit) {
-        validateQuery(query);
         Map<String, Integer> lemmas = textProcessorService.getLemmas(query);
         List<String> sortedLemmas = lemmas.keySet().stream().toList();
         if (sortedLemmas.isEmpty()) {
@@ -44,12 +42,6 @@ public class SearchService {
         return SearchDto.builder().result(true).count(limitedResults.size()).data(limitedResults).build();
     }
 
-    private void validateQuery(String query) {
-        if (query == null || query.isEmpty()) {
-            throw new IllegalArgumentException("Задан пустой поисковый запрос");
-        }
-    }
-
     private List<Page> getPages(List<String> lemmas, String site) {
         if (site == null) {
             return getPagesByLemmas(lemmas);
@@ -58,7 +50,7 @@ public class SearchService {
             if (siteModel != null) {
                 return getPagesByLemmasAndSite(lemmas, siteModel);
             } else {
-                throw new IllegalArgumentException("Сайт не найден: " + site);
+                return new ArrayList<>();
             }
         }
     }
@@ -116,4 +108,5 @@ public class SearchService {
         return snippetBuilder.toString().trim();
     }
 }
+
 

@@ -28,5 +28,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleSiteNotFoundException(SiteNotFoundException e) {
         return new ResponseEntity<>(new ErrorResponseDto(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(UnknownPageException.class)
+    public ResponseEntity<ErrorResponseDto> handleUnknownPageException(UnknownPageException e) {
+        return new ResponseEntity<>(new ErrorResponseDto(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
 }
 

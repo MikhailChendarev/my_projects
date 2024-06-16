@@ -5,14 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.SearchDto;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.exceptions.EmptyQueryException;
-import searchengine.exceptions.IndexingInProgressException;
-import searchengine.exceptions.IndexingIsNotProgressException;
-import searchengine.exceptions.SiteNotFoundException;
+import searchengine.exceptions.*;
+import searchengine.model.SiteModel;
 import searchengine.services.*;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,7 +38,10 @@ public class ApiController {
 
     @PostMapping("/indexPage")
     public Map<String, Boolean> indexPage(@RequestParam String url) {
-        siteService.indexPage(url);
+        Optional<SiteModel> siteModelOpt = siteService.indexPage(url);
+        if (!siteModelOpt.isPresent()) {
+            throw new UnknownPageException("Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
+        }
         return Collections.singletonMap("result", true);
     }
 
@@ -65,7 +67,6 @@ public class ApiController {
         }
         return searchService.performSearch(query, site, offset, limit);
     }
-
 }
 
 
