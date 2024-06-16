@@ -4,9 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
-import searchengine.dto.SearchResultRs;
-import searchengine.model.Index;
-import searchengine.model.Lemma;
+import searchengine.dto.SearchDto;
 import searchengine.model.Page;
 import searchengine.model.SiteModel;
 import searchengine.repositories.IndexRepository;
@@ -23,31 +21,46 @@ public class SearchService {
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
     private final TextProcessorService textProcessorService;
+    private final RelevanceService relevanceService;
 
-    public List<SearchResultRs> performSearch(String query, String site, int offset, int limit) {
+
+    public SearchDto performSearch(String query, String site, int offset, int limit) {
+        validateQuery(query);
         Map<String, Integer> lemmas = textProcessorService.getLemmas(query);
         List<String> sortedLemmas = lemmas.keySet().stream().toList();
         if (sortedLemmas.isEmpty()) {
-            return new ArrayList<>();
+            return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
         }
-        List<Page> pages;
+        List<Page> pages = getPages(sortedLemmas, site);
+        if (pages.isEmpty()) {
+            return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
+        }
+        Map<Page, Float> relevanceMap = relevanceService.calculateRelevanceForPages(pages, lemmas);
+        float maxRelevance = relevanceService.findMaxRelevance(relevanceMap);
+        List<SearchDto.SearchData> results = createSearchResults(relevanceMap, maxRelevance, lemmas);
+        results.sort(Comparator.comparing(SearchDto.SearchData::getRelevance).reversed());
+        int toIndex = Math.min(results.size(), offset + limit);
+        List<SearchDto.SearchData> limitedResults = results.subList(Math.min(offset, results.size()), toIndex);
+        return SearchDto.builder().result(true).count(limitedResults.size()).data(limitedResults).build();
+    }
+
+    private void validateQuery(String query) {
+        if (query == null || query.isEmpty()) {
+            throw new IllegalArgumentException("Задан пустой поисковый запрос");
+        }
+    }
+
+    private List<Page> getPages(List<String> lemmas, String site) {
         if (site == null) {
-            pages = getPagesByLemmas(sortedLemmas);
+            return getPagesByLemmas(lemmas);
         } else {
             SiteModel siteModel = siteRepository.findByUrl(site);
             if (siteModel != null) {
-                pages = getPagesByLemmasAndSite(sortedLemmas, siteModel);
+                return getPagesByLemmasAndSite(lemmas, siteModel);
             } else {
                 throw new IllegalArgumentException("Сайт не найден: " + site);
             }
         }
-        if (pages.isEmpty()) {
-            return new ArrayList<>();
-        }
-        List<SearchResultRs> results = calculateRelevance(pages, lemmas);
-        results.sort(Comparator.comparing(SearchResultRs::getRelevance).reversed());
-        int toIndex = Math.min(results.size(), offset + limit);
-        return results.subList(Math.min(offset, results.size()), toIndex);
     }
 
     private List<Page> getPagesByLemmas(List<String> lemmas) {
@@ -59,38 +72,23 @@ public class SearchService {
 
     private List<Page> getPagesByLemmasAndSite(List<String> lemmas, SiteModel siteModel) {
         return lemmas.stream()
-                .map(lemma -> lemmaRepository.findByLemma(lemma))
+                .map(lemmaRepository::findByLemma)
                 .flatMap(lemma -> indexRepository.findPagesByLemmaAndSiteModel(lemma, siteModel).stream())
                 .collect(Collectors.toList());
     }
 
-    private List<SearchResultRs> calculateRelevance(List<Page> pages, Map<String, Integer> lemmas) {
-        float maxRelevance = 0;
-        Map<Page, Float> relevanceMap = new HashMap<>();
-        for (Page page : pages) {
-            float relevance = 0;
-            for (Map.Entry<String, Integer> entry : lemmas.entrySet()) {
-                String lemma = entry.getKey();
-                int frequency = entry.getValue();
-                Lemma lemmaEntity = lemmaRepository.findByLemma(lemma);
-                if (lemmaEntity != null) {
-                    List<Index> indices = indexRepository.findByPageAndLemma(page, lemmaEntity);
-                    for (Index index : indices) {
-                        relevance += index.getRating() * frequency;
-                    }
-                }
-            }
-            maxRelevance = Math.max(maxRelevance, relevance);
-            relevanceMap.put(page, relevance);
-        }
-        List<SearchResultRs> searchResults = new ArrayList<>();
+    private List<SearchDto.SearchData> createSearchResults(Map<Page, Float> relevanceMap, float maxRelevance, Map<String, Integer> lemmas) {
+        List<SearchDto.SearchData> searchResults = new ArrayList<>();
         for (Map.Entry<Page, Float> entry : relevanceMap.entrySet()) {
-            SearchResultRs searchResultRs = new SearchResultRs();
-            searchResultRs.setUri(entry.getKey().getPath());
-            searchResultRs.setTitle(extractTitleFromContent(entry.getKey().getContent()));
-            searchResultRs.setSnippet(createSnippet(entry.getKey().getContent(), lemmas.keySet()));
-            searchResultRs.setRelevance(entry.getValue() / maxRelevance);
-            searchResults.add(searchResultRs);
+            SearchDto.SearchData searchData = SearchDto.SearchData.builder()
+                    .site(entry.getKey().getSiteModel().getUrl())
+                    .uri(entry.getKey().getPath())
+                    .siteName(entry.getKey().getSiteModel().getName())
+                    .title(extractTitleFromContent(entry.getKey().getContent()))
+                    .snippet(createSnippet(entry.getKey().getContent(), lemmas.keySet()))
+                    .relevance(entry.getValue() / maxRelevance)
+                    .build();
+            searchResults.add(searchData);
         }
         return searchResults;
     }
@@ -118,3 +116,4 @@ public class SearchService {
         return snippetBuilder.toString().trim();
     }
 }
+

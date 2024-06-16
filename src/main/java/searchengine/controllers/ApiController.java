@@ -3,14 +3,15 @@ package searchengine.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import searchengine.dto.SearchResultRs;
+import searchengine.dto.SearchDto;
 import searchengine.dto.statistics.StatisticsResponse;
+import searchengine.exceptions.EmptyQueryException;
 import searchengine.exceptions.IndexingInProgressException;
 import searchengine.exceptions.IndexingIsNotProgressException;
+import searchengine.exceptions.SiteNotFoundException;
 import searchengine.services.*;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -52,12 +53,19 @@ public class ApiController {
     }
 
     @GetMapping("/search")
-    public List<SearchResultRs> search(@RequestParam String query,
-                                       @RequestParam(required = false) String site,
-                                       @RequestParam(required = false, defaultValue = "0") int offset,
-                                       @RequestParam(required = false, defaultValue = "20") int limit) {
+    public SearchDto search(@RequestParam String query,
+                            @RequestParam(required = false) String site,
+                            @RequestParam(required = false, defaultValue = "0") int offset,
+                            @RequestParam(required = false, defaultValue = "20") int limit) {
+        if (query == null || query.isEmpty()) {
+            throw new EmptyQueryException("Задан пустой поисковый запрос");
+        }
+        if (site != null && siteService.getSiteRepository().findByUrl(site) == null) {
+            throw new SiteNotFoundException("Сайт не найден: " + site);
+        }
         return searchService.performSearch(query, site, offset, limit);
     }
+
 }
 
 
