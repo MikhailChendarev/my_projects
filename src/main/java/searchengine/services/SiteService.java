@@ -123,7 +123,6 @@ public class SiteService {
         siteRepository.save(siteModel);
     }
 
-
     public SiteModel mapToEntity(Site site) {
         SiteModel siteModel = new SiteModel();
         siteModel.setUrl(site.getUrl());
