@@ -1737,7 +1737,7 @@ var API = function(){
                 if (($this.hasClass('form') && e.type==='submit')
                     || (e.type==='click' && !$this.hasClass('form'))){
                     e.preventDefault();
-                    
+
                     switch ($this.data('send')) {
                         case 'indexPage':
                             var $page = $this.closest('.form').find('input[name="page"]');
@@ -1762,7 +1762,7 @@ var API = function(){
                                 }
                             }
                             break;
-        
+
                     }
                     sendData(
                         send[$this.data('send')].address,

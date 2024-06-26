@@ -54,7 +54,7 @@ public class TextProcessorService {
         }
     }
 
-    private List<String> getWordBaseForms(String word) {
+    public List<String> getWordBaseForms(String word) {
         if (word.matches("[а-яА-ЯёЁ]+")) {
             return russianMorphology.getNormalForms(word);
         } else if (word.matches("[a-zA-Z]+")) {

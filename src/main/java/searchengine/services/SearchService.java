@@ -97,13 +97,18 @@ public class SearchService {
         StringBuilder snippetBuilder = new StringBuilder();
         int snippetLength = 0;
         for (String word : words) {
-            if (searchTerms.contains(word.toLowerCase())) {
+            List<String> wordBaseForms = textProcessorService.getWordBaseForms(word.toLowerCase());
+            boolean isMatch = searchTerms.stream().anyMatch(searchTerm -> {
+                List<String> searchTermBaseForms = textProcessorService.getWordBaseForms(searchTerm.toLowerCase());
+                return wordBaseForms.stream().anyMatch(searchTermBaseForms::contains);
+            });
+            if (isMatch) {
                 snippetBuilder.append("<b>").append(word).append("</b>").append(" ");
             } else {
                 snippetBuilder.append(word).append(" ");
             }
             snippetLength += word.length() + 1;
-            if (snippetLength > 150) break;
+            if (snippetLength > 500) break;
         }
         return snippetBuilder.toString().trim();
     }
