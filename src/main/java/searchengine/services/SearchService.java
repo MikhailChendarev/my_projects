@@ -35,11 +35,15 @@ public class SearchService {
         }
         Map<Page, Float> relevanceMap = relevanceService.calculateRelevanceForPages(pages, lemmas);
         float maxRelevance = relevanceService.findMaxRelevance(relevanceMap);
-        List<SearchDto.SearchData> results = createSearchResults(relevanceMap, maxRelevance, lemmas);
-        results.sort(Comparator.comparing(SearchDto.SearchData::getRelevance).reversed());
-        int toIndex = Math.min(results.size(), offset + limit);
-        List<SearchDto.SearchData> limitedResults = results.subList(Math.min(offset, results.size()), toIndex);
-        return SearchDto.builder().result(true).count(limitedResults.size()).data(limitedResults).build();
+        List<SearchDto.SearchData> allResults = createSearchResults(relevanceMap, maxRelevance, lemmas);
+        allResults.sort(Comparator.comparing(SearchDto.SearchData::getRelevance).reversed());
+        int toIndex = Math.min(allResults.size(), offset + limit);
+        List<SearchDto.SearchData> limitedResults = allResults.subList(Math.min(offset, allResults.size()), toIndex);
+        return SearchDto.builder()
+                .result(true)
+                .count(allResults.size())
+                .data(limitedResults)
+                .build();
     }
 
     private List<Page> getPages(List<String> lemmas, String site) {
@@ -92,8 +96,7 @@ public class SearchService {
 
     private String createSnippet(String htmlContent, Set<String> searchTerms) {
         Document doc = Jsoup.parse(htmlContent);
-        String text = doc.body().text();
-        String[] words = text.split("\\s+");
+        String[] words = doc.body().text().split("\\s+");
         StringBuilder snippetBuilder = new StringBuilder();
         int snippetLength = 0;
         for (String word : words) {
@@ -108,7 +111,7 @@ public class SearchService {
                 snippetBuilder.append(word).append(" ");
             }
             snippetLength += word.length() + 1;
-            if (snippetLength > 500) break;
+            if (snippetLength > 400) break;
         }
         return snippetBuilder.toString().trim();
     }

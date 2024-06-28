@@ -92,12 +92,10 @@ public class PageService {
 
     private void updateSiteModel(SiteModel siteModel) {
         siteModel.setStatusTime(Instant.now());
-        siteModel.setLastError(null);
         siteRepository.save(siteModel);
     }
 
     private void handleException(Exception e, SiteModel siteModel) {
-        siteModel.setStatus(Status.FAILED);
         siteModel.setLastError(e.getMessage());
         siteRepository.save(siteModel);
         e.printStackTrace();

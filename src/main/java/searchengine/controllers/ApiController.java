@@ -3,6 +3,8 @@ package searchengine.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import searchengine.config.Site;
+import searchengine.config.SitesList;
 import searchengine.dto.SearchDto;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.exceptions.*;
@@ -10,6 +12,7 @@ import searchengine.model.SiteModel;
 import searchengine.services.*;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,6 +23,12 @@ public class ApiController {
     private final StatisticsService statisticsService;
     private final SiteService siteService;
     private final SearchService searchService;
+    private final SitesList sitesList;
+
+    @GetMapping("/sites")
+    public List<Site> getSitesList() {
+        return sitesList.getSites();
+    }
 
     @GetMapping("/statistics")
     public StatisticsResponse statistics() {

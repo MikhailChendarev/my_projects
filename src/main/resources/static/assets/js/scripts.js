@@ -1457,8 +1457,19 @@ var API = function(){
             }
         });
     }
-    
+
     var send = {
+        getSites: {
+            address: '/sites',
+            type: 'GET',
+            action: function(result, $this){
+                var select = $('#siteSelect');
+                result.forEach(function(site) {
+                    var option = $('<option>').val(site.url).text(site.name);
+                        select.append(option);
+                    });
+            }
+        },
         startIndexing:{
             address: '/startIndexing',
             type: 'GET',
@@ -1888,6 +1899,7 @@ var Tabs = function(){
             // $links.removeClass('Tabs-link_ACTIVE');
             // $step.eq(0).addClass('Tabs-link_ACTIVE');
             // $active.show(0);
+            API.send.getSites.action();
 
             $tabsLink.on('click', function(e){
                 var $this = $(this);

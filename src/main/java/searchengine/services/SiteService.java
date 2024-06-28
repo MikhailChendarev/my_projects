@@ -31,7 +31,6 @@ public class SiteService {
     private final PageService pageService;
     private final SiteScannerService siteScannerService;
     private ForkJoinPool forkJoinPool = new ForkJoinPool();
-    private String[] statuses = { "INDEXED", "FAILED", "INDEXING" };
     private String error = "Ошибка индексации: главная страница сайта не доступна";
     private String userStopIndexing = "Индексация остановлена пользователем";
 
@@ -97,16 +96,20 @@ public class SiteService {
 
     private void scanSite(SiteModel siteModel) {
         try {
-            updateSiteStatus(siteModel, Status.valueOf(statuses[2]));
+            updateSiteStatus(siteModel, Status.INDEXING);
             siteScannerService.scan(siteModel, siteModel.getUrl());
             if (siteScannerService.stopFlag) {
                 updateSiteStatusWithError(siteModel, Status.FAILED, userStopIndexing);
                 return;
             }
-            updateSiteStatus(siteModel, Status.valueOf(statuses[0]));
+            updateSiteStatus(siteModel, Status.INDEXED);
         } catch (Exception e) {
-            updateSiteStatusWithError(siteModel, Status.valueOf(statuses[1]), error);
+            updateSiteStatusWithError(siteModel, Status.FAILED, error);
             e.printStackTrace();
+        } finally {
+            if (!siteScannerService.stopFlag) {
+                updateSiteStatus(siteModel, Status.INDEXED);
+            }
         }
     }
 
