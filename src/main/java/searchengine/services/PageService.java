@@ -1,7 +1,8 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Connection;
+
+import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +33,7 @@ public class PageService {
 
     public void processPage(SiteModel siteModel, String url) {
         try {
-            Connection.Response response = Jsoup.connect(url).userAgent(userAgent).referrer(referrer).execute();
+            Response response = Jsoup.connect(url).userAgent(userAgent).referrer(referrer).execute();
             if (response.statusCode() >= 400) {
                 return;
             }
@@ -75,7 +76,7 @@ public class PageService {
         indexRepository.deleteAll(indicesToDelete);
     }
 
-    private Page createNewPageModel(String path, Document doc, Connection.Response response, SiteModel siteModel) {
+    private Page createNewPageModel(String path, Document doc, Response response, SiteModel siteModel) {
         Page page = new Page();
         page.setPath(path);
         page.setContent(doc.html());
