@@ -5,6 +5,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 import searchengine.dto.SearchDto;
+import searchengine.model.Lemma;
 import searchengine.model.Page;
 import searchengine.model.SiteModel;
 import searchengine.repositories.IndexRepository;
@@ -60,17 +61,39 @@ public class SearchService {
     }
 
     private List<Page> getPagesByLemmas(List<String> lemmas) {
-        return lemmas.stream()
-                .filter(lemma -> lemmaRepository.findByLemma(lemma) != null)
-                .flatMap(lemma -> indexRepository.findPagesByLemma(lemma).stream())
-                .collect(Collectors.toList());
+        List<Page> pages = new ArrayList<>();
+        for (String lemma : lemmas) {
+            Lemma lemmaModel = lemmaRepository.findByLemma(lemma);
+            if (lemmaModel != null) {
+                List<Page> pagesForLemma = indexRepository.findPagesByLemma(lemmaModel.getLemma());
+                if (pages.isEmpty()) {
+                    pages.addAll(pagesForLemma);
+                } else {
+                    pages.retainAll(pagesForLemma);
+                }
+            } else {
+                return new ArrayList<>();
+            }
+        }
+        return pages;
     }
 
     private List<Page> getPagesByLemmasAndSite(List<String> lemmas, SiteModel siteModel) {
-        return lemmas.stream()
-                .map(lemmaRepository::findByLemma)
-                .flatMap(lemma -> indexRepository.findPagesByLemmaAndSiteModel(lemma, siteModel).stream())
-                .collect(Collectors.toList());
+        List<Page> pages = new ArrayList<>();
+        for (String lemma : lemmas) {
+            Lemma lemmaModel = lemmaRepository.findByLemma(lemma);
+            if (lemmaModel != null) {
+                List<Page> pagesForLemma = indexRepository.findPagesByLemmaAndSiteModel(lemmaModel, siteModel);
+                if (pages.isEmpty()) {
+                    pages.addAll(pagesForLemma);
+                } else {
+                    pages.retainAll(pagesForLemma);
+                }
+            } else {
+                return new ArrayList<>();
+            }
+        }
+        return pages;
     }
 
     private List<SearchDto.SearchData> createSearchResults(Map<Page, Float> relevanceMap, float maxRelevance, Map<String, Integer> lemmas) {
@@ -100,7 +123,7 @@ public class SearchService {
         StringBuilder snippetBuilder = new StringBuilder();
         int snippetLength = 0;
         for (String word : words) {
-            List<String> wordBaseForms = textProcessorService.getWordBaseForms(word.toLowerCase());
+            List<String> wordBaseForms = textProcessorService.getWordBaseForms(word.replaceAll("[^а-яА-ЯёЁa-zA-Z]", "").toLowerCase());
             boolean isMatch = searchTerms.stream().anyMatch(searchTerm -> {
                 List<String> searchTermBaseForms = textProcessorService.getWordBaseForms(searchTerm.toLowerCase());
                 return wordBaseForms.stream().anyMatch(searchTermBaseForms::contains);
