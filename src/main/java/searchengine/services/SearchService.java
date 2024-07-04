@@ -123,11 +123,9 @@ public class SearchService {
         StringBuilder snippetBuilder = new StringBuilder();
         int snippetLength = 0;
         for (String word : words) {
-            List<String> wordBaseForms = textProcessorService.getWordBaseForms(word.replaceAll("[^а-яА-ЯёЁa-zA-Z]", "").toLowerCase());
-            boolean isMatch = searchTerms.stream().anyMatch(searchTerm -> {
-                List<String> searchTermBaseForms = textProcessorService.getWordBaseForms(searchTerm.toLowerCase());
-                return wordBaseForms.stream().anyMatch(searchTermBaseForms::contains);
-            });
+            String cleanWord = word.toLowerCase().replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
+            List<String> wordBaseForms = textProcessorService.getWordBaseForms(cleanWord);
+            boolean isMatch = wordBaseForms.stream().anyMatch(baseForm -> searchTerms.contains(baseForm));
             if (isMatch) {
                 snippetBuilder.append("<b>").append(word).append("</b>").append(" ");
             } else {
