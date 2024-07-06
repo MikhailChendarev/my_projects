@@ -9,7 +9,6 @@ import searchengine.model.Lemma;
 import searchengine.model.Page;
 import searchengine.model.SiteModel;
 
-import java.util.Collection;
 import java.util.List;
 
 @Repository

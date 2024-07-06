@@ -77,5 +77,3 @@ public class ApiController {
         return searchService.performSearch(query, site, offset, limit);
     }
 }
-
-

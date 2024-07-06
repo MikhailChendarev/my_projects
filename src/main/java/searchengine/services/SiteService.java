@@ -14,14 +14,13 @@ import searchengine.repositories.SiteRepository;
 
 import javax.annotation.PostConstruct;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
+@Data
 @Service
 @RequiredArgsConstructor
-@Data
 public class SiteService {
     private final SitesList sitesList;
     private final IndexRepository indexRepository;
@@ -31,17 +30,15 @@ public class SiteService {
     private final PageService pageService;
     private final SiteScannerService siteScannerService;
     private ForkJoinPool forkJoinPool = new ForkJoinPool();
-    private String error = "Ошибка индексации: главная страница сайта не доступна";
-    private String userStopIndexing = "Индексация остановлена пользователем";
+    private static final String ERROR = "Ошибка индексации: главная страница сайта не доступна";
+    private static final String USER_STOP_INDEXING = "Индексация остановлена пользователем";
 
     @PostConstruct
     public void init() {
-        for (Site site : sitesList.getSites()) {
-            SiteModel siteModel = mapToEntity(site);
-            if (siteRepository.findByUrl(siteModel.getUrl()) == null) {
-                siteRepository.save(siteModel);
-            }
-        }
+        sitesList.getSites().stream()
+                .map(this::mapToEntity)
+                .filter(siteModel -> siteRepository.findByUrl(siteModel.getUrl()) == null)
+                .forEach(siteRepository::save);
     }
 
     public void stopIndexing() {
@@ -51,24 +48,15 @@ public class SiteService {
     }
 
     private void stopTasks() {
-        List<Runnable> awaitingTasks = forkJoinPool.shutdownNow();
-        for (Runnable task : awaitingTasks) {
-            ((Future<?>) task).cancel(true);
-        }
+        forkJoinPool.shutdownNow().stream()
+                .map(task -> (Future<?>) task)
+                .forEach(task -> task.cancel(true));
     }
 
     private void updateSiteModels() {
-        List<SiteModel> siteModels = siteRepository.findAll();
-        for (SiteModel siteModel : siteModels) {
-            if (siteModel.getStatus().equals(Status.INDEXING)) {
-                siteModel.setStatus(Status.FAILED);
-                siteModel.setLastError(userStopIndexing);
-            } else if (siteModel.getStatus().equals(Status.INDEXED)) {
-                continue;
-            }
-            siteModel.setStatusTime(Instant.now());
-            siteRepository.save(siteModel);
-        }
+        siteRepository.findAll().stream()
+                .filter(siteModel -> siteModel.getStatus().equals(Status.INDEXING) || !siteModel.getStatus().equals(Status.INDEXED))
+                .forEach(this::updateSiteStatusAsFailed);
     }
 
     public boolean isIndexingInProgress() {
@@ -88,10 +76,13 @@ public class SiteService {
     }
 
     private void scanSites() {
-        for (Site site : sitesList.getSites()) {
-            SiteModel siteModel = mapToEntity(site);
-            forkJoinPool.submit(() -> scanSite(siteModel));
-        }
+        sitesList.getSites().stream()
+                .map(this::mapToEntity)
+                .forEach(this::submitSiteForScanning);
+    }
+
+    private void submitSiteForScanning(SiteModel siteModel) {
+        forkJoinPool.submit(() -> scanSite(siteModel));
     }
 
     private void scanSite(SiteModel siteModel) {
@@ -99,12 +90,12 @@ public class SiteService {
             updateSiteStatus(siteModel, Status.INDEXING);
             siteScannerService.scan(siteModel, siteModel.getUrl());
             if (siteScannerService.stopFlag) {
-                updateSiteStatusWithError(siteModel, Status.FAILED, userStopIndexing);
+                updateSiteStatusWithError(siteModel, USER_STOP_INDEXING);
                 return;
             }
             updateSiteStatus(siteModel, Status.INDEXED);
         } catch (Exception e) {
-            updateSiteStatusWithError(siteModel, Status.FAILED, error);
+            updateSiteStatusWithError(siteModel, ERROR);
             e.printStackTrace();
         } finally {
             if (!siteScannerService.stopFlag) {
@@ -119,9 +110,16 @@ public class SiteService {
         siteRepository.save(siteModel);
     }
 
-    private void updateSiteStatusWithError(SiteModel siteModel, Status status, String error) {
-        siteModel.setStatus(status);
+    private void updateSiteStatusWithError(SiteModel siteModel, String error) {
+        siteModel.setStatus(Status.FAILED);
         siteModel.setLastError(error);
+        siteModel.setStatusTime(Instant.now());
+        siteRepository.save(siteModel);
+    }
+
+    private void updateSiteStatusAsFailed(SiteModel siteModel) {
+        siteModel.setStatus(Status.FAILED);
+        siteModel.setLastError(USER_STOP_INDEXING);
         siteModel.setStatusTime(Instant.now());
         siteRepository.save(siteModel);
     }
@@ -134,17 +132,14 @@ public class SiteService {
     }
 
     public Optional<SiteModel> indexPage(String url) {
-        Optional<String> baseUrlOpt = sitesList.getSites().stream()
+        return sitesList.getSites().stream()
                 .map(Site::getUrl)
                 .filter(url::startsWith)
-                .findFirst();
-        if (!baseUrlOpt.isPresent()) {
-            return Optional.empty();
-        }
-        String baseUrl = baseUrlOpt.get();
-        SiteModel siteModel = siteRepository.findByUrl(baseUrl);
-        pageService.processPage(siteModel, url);
-        return Optional.of(siteModel);
+                .findFirst()
+                .flatMap(baseUrl -> {
+                    SiteModel siteModel = siteRepository.findByUrl(baseUrl);
+                    pageService.processPage(siteModel, url);
+                    return Optional.of(siteModel);
+                });
     }
 }
-

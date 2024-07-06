@@ -9,38 +9,31 @@ import java.util.*;
 
 @Service
 public class TextProcessorService {
-    private LuceneMorphology russianMorphology;
-    private LuceneMorphology englishMorphology;
+    private final LuceneMorphology russianMorphology;
+    private final LuceneMorphology englishMorphology;
 
     public TextProcessorService() {
         try {
             russianMorphology = new RussianLuceneMorphology();
             englishMorphology = new EnglishLuceneMorphology();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Ошибка при инициализации морфологии", e);
         }
     }
 
     public Map<String, Integer> getLemmas(String text) {
         Map<String, Integer> lemmas = new HashMap<>();
-        String[] words = text.split("\\s+");
+        String[] words = text.toLowerCase().split("\\s+");
         for (String word : words) {
-            word = word.toLowerCase().replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
-            processWord(word, lemmas);
+            word = word.replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
+            if (!word.isEmpty()) {
+                getWordBaseForms(word).forEach(baseForm -> lemmas.merge(baseForm, 1, Integer::sum));
+            }
         }
         return lemmas;
     }
 
-    private void processWord(String word, Map<String, Integer> lemmas) {
-        if (!word.isEmpty()) {
-            List<String> wordBaseForms = getWordBaseForms(word);
-            wordBaseForms.forEach(baseForm -> {
-                lemmas.put(baseForm, lemmas.getOrDefault(baseForm, 0) + 1);
-            });
-        }
-    }
-
-    public List<String> getWordBaseForms(String word) {
+    List<String> getWordBaseForms(String word) {
         if (word.matches("[а-яА-ЯёЁ]+")) {
             return russianMorphology.getNormalForms(word);
         } else if (word.matches("[a-zA-Z]+")) {

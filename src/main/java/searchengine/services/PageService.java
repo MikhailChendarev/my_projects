@@ -20,13 +20,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Service
 public class PageService {
-    private final TextProcessorService textProcessorService;
-    private final IndexService indexService;
-    private final LemmaService lemmaService;
     @Value("${user.agent}")
     private String userAgent;
     @Value("${referrer}")
     private String referrer;
+    private final TextProcessorService textProcessorService;
+    private final IndexService indexService;
+    private final LemmaService lemmaService;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;

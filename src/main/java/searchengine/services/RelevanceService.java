@@ -57,4 +57,3 @@ public class RelevanceService {
         return maxRelevance;
     }
 }
-

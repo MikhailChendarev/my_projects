@@ -27,24 +27,29 @@ public class SearchService {
     public SearchDto performSearch(String query, String site, int offset, int limit) {
         Map<String, Integer> lemmas = textProcessorService.getLemmas(query);
         List<String> sortedLemmas = lemmas.keySet().stream().toList();
-        if (sortedLemmas.isEmpty()) {
-            return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
-        }
         List<Page> pages = getPages(sortedLemmas, site);
-        if (pages.isEmpty()) {
-            return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
+        if (sortedLemmas.isEmpty() || pages.isEmpty()) {
+            return buildEmptySearchDto();
         }
         Map<Page, Float> relevanceMap = relevanceService.calculateRelevanceForPages(pages, lemmas);
         float maxRelevance = relevanceService.findMaxRelevance(relevanceMap);
         List<SearchDto.SearchData> allResults = createSearchResults(relevanceMap, maxRelevance, lemmas);
         allResults.sort(Comparator.comparing(SearchDto.SearchData::getRelevance).reversed());
-        int toIndex = Math.min(allResults.size(), offset + limit);
-        List<SearchDto.SearchData> limitedResults = allResults.subList(Math.min(offset, allResults.size()), toIndex);
+        List<SearchDto.SearchData> limitedResults = getLimitedResults(allResults, offset, limit);
         return SearchDto.builder()
                 .result(true)
                 .count(allResults.size())
                 .data(limitedResults)
                 .build();
+    }
+
+    private SearchDto buildEmptySearchDto() {
+        return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
+    }
+
+    private List<SearchDto.SearchData> getLimitedResults(List<SearchDto.SearchData> allResults, int offset, int limit) {
+        int toIndex = Math.min(allResults.size(), offset + limit);
+        return allResults.subList(Math.min(offset, allResults.size()), toIndex);
     }
 
     private List<Page> getPages(List<String> lemmas, String site) {
@@ -84,10 +89,12 @@ public class SearchService {
             Lemma lemmaModel = lemmaRepository.findByLemma(lemma);
             if (lemmaModel != null) {
                 List<Page> pagesForLemma = indexRepository.findPagesByLemmaAndSiteModel(lemmaModel, siteModel);
-                if (pages.isEmpty()) {
-                    pages.addAll(pagesForLemma);
-                } else {
-                    pages.retainAll(pagesForLemma);
+                if (!pagesForLemma.isEmpty()) {
+                    if (pages.isEmpty()) {
+                        pages.addAll(pagesForLemma);
+                    } else {
+                        pages.retainAll(pagesForLemma);
+                    }
                 }
             } else {
                 return new ArrayList<>();
@@ -125,7 +132,7 @@ public class SearchService {
         for (String word : words) {
             String cleanWord = word.toLowerCase().replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
             List<String> wordBaseForms = textProcessorService.getWordBaseForms(cleanWord);
-            boolean isMatch = wordBaseForms.stream().anyMatch(baseForm -> searchTerms.contains(baseForm));
+            boolean isMatch = wordBaseForms.stream().anyMatch(searchTerms::contains);
             if (isMatch) {
                 snippetBuilder.append("<b>").append(word).append("</b>").append(" ");
             } else {
@@ -137,5 +144,3 @@ public class SearchService {
         return snippetBuilder.toString().trim();
     }
 }
-
-

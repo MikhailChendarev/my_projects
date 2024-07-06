@@ -31,4 +31,3 @@ public class SearchDto {
         private Float relevance;
     }
 }
-
