@@ -5,8 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
-import searchengine.model.SiteModel;
-import searchengine.model.Status;
+import searchengine.model.*;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
@@ -14,6 +13,7 @@ import searchengine.repositories.SiteRepository;
 
 import javax.annotation.PostConstruct;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
@@ -64,14 +64,11 @@ public class SiteService {
     }
 
     public void startIndexing() {
-        if (forkJoinPool.isShutdown()) {
-            forkJoinPool = new ForkJoinPool();
-        }
         siteScannerService.stopFlag = false;
-        indexRepository.deleteAll();
-        lemmaRepository.deleteAll();
-        pageRepository.deleteAll();
-        siteRepository.deleteAll();
+        indexRepository.deleteAllNative();
+        lemmaRepository.deleteAllNative();
+        pageRepository.deleteAllNative();
+        siteRepository.deleteAllNative();
         scanSites();
     }
 
@@ -82,6 +79,9 @@ public class SiteService {
     }
 
     private void submitSiteForScanning(SiteModel siteModel) {
+        if (forkJoinPool.isShutdown()) {
+            forkJoinPool = new ForkJoinPool();
+        }
         forkJoinPool.submit(() -> scanSite(siteModel));
     }
 
