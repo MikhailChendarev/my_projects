@@ -100,6 +100,7 @@ public class SiteService {
         } finally {
             if (!siteScannerService.stopFlag) {
                 updateSiteStatus(siteModel, Status.INDEXED);
+                siteModel.setLastError("-");
             }
         }
     }

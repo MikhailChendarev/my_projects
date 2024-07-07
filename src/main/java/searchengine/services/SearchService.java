@@ -13,6 +13,7 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.SiteRepository;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,7 +30,7 @@ public class SearchService {
         List<String> sortedLemmas = lemmas.keySet().stream().toList();
         List<Page> pages = getPages(sortedLemmas, site);
         if (sortedLemmas.isEmpty() || pages.isEmpty()) {
-            return buildEmptySearchDto();
+            return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
         }
         Map<Page, Float> relevanceMap = relevanceService.calculateRelevanceForPages(pages, lemmas);
         float maxRelevance = relevanceService.findMaxRelevance(relevanceMap);
@@ -41,10 +42,6 @@ public class SearchService {
                 .count(allResults.size())
                 .data(limitedResults)
                 .build();
-    }
-
-    private SearchDto buildEmptySearchDto() {
-        return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
     }
 
     private List<SearchDto.SearchData> getLimitedResults(List<SearchDto.SearchData> allResults, int offset, int limit) {
@@ -65,30 +62,12 @@ public class SearchService {
         }
     }
 
-    private List<Page> getPagesByLemmas(List<String> lemmas) {
+    private List<Page> getPages(List<String> lemmas, BiFunction<Lemma, SiteModel, List<Page>> findPages, SiteModel siteModel) {
         List<Page> pages = new ArrayList<>();
         for (String lemma : lemmas) {
             Lemma lemmaModel = lemmaRepository.findByLemma(lemma);
             if (lemmaModel != null) {
-                List<Page> pagesForLemma = indexRepository.findPagesByLemma(lemmaModel.getLemma());
-                if (pages.isEmpty()) {
-                    pages.addAll(pagesForLemma);
-                } else {
-                    pages.retainAll(pagesForLemma);
-                }
-            } else {
-                return new ArrayList<>();
-            }
-        }
-        return pages;
-    }
-
-    private List<Page> getPagesByLemmasAndSite(List<String> lemmas, SiteModel siteModel) {
-        List<Page> pages = new ArrayList<>();
-        for (String lemma : lemmas) {
-            Lemma lemmaModel = lemmaRepository.findByLemma(lemma);
-            if (lemmaModel != null) {
-                List<Page> pagesForLemma = indexRepository.findPagesByLemmaAndSiteModel(lemmaModel, siteModel);
+                List<Page> pagesForLemma = findPages.apply(lemmaModel, siteModel);
                 if (!pagesForLemma.isEmpty()) {
                     if (pages.isEmpty()) {
                         pages.addAll(pagesForLemma);
@@ -103,6 +82,14 @@ public class SearchService {
         return pages;
     }
 
+    private List<Page> getPagesByLemmas(List<String> lemmas) {
+        return getPages(lemmas, (lemma, siteModel) -> indexRepository.findPagesByLemma(lemma.getLemma()), null);
+    }
+
+    private List<Page> getPagesByLemmasAndSite(List<String> lemmas, SiteModel siteModel) {
+        return getPages(lemmas, indexRepository::findPagesByLemmaAndSiteModel, siteModel);
+    }
+
     private List<SearchDto.SearchData> createSearchResults(Map<Page, Float> relevanceMap, float maxRelevance, Map<String, Integer> lemmas) {
         List<SearchDto.SearchData> searchResults = new ArrayList<>();
         for (Map.Entry<Page, Float> entry : relevanceMap.entrySet()) {
@@ -110,7 +97,7 @@ public class SearchService {
                     .site(entry.getKey().getSiteModel().getUrl())
                     .uri(entry.getKey().getPath())
                     .siteName(entry.getKey().getSiteModel().getName())
-                    .title(extractTitleFromContent(entry.getKey().getContent()))
+                    .title(highlightTitle(Jsoup.parse(entry.getKey().getContent()).title(), lemmas.keySet()))
                     .snippet(createSnippet(entry.getKey().getContent(), lemmas.keySet()))
                     .relevance(entry.getValue() / maxRelevance)
                     .build();
@@ -119,28 +106,54 @@ public class SearchService {
         return searchResults;
     }
 
-    private String extractTitleFromContent(String htmlContent) {
-        Document doc = Jsoup.parse(htmlContent);
-        return doc.title();
-    }
-
     private String createSnippet(String htmlContent, Set<String> searchTerms) {
-        Document doc = Jsoup.parse(htmlContent);
-        String[] words = doc.body().text().split("\\s+");
+        String[] words = Jsoup.parse(htmlContent).body().text().split("\\s+");;
+        int totalLength = 0;
+        boolean found = false;
         StringBuilder snippetBuilder = new StringBuilder();
-        int snippetLength = 0;
         for (String word : words) {
             String cleanWord = word.toLowerCase().replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
-            List<String> wordBaseForms = textProcessorService.getWordBaseForms(cleanWord);
-            boolean isMatch = wordBaseForms.stream().anyMatch(searchTerms::contains);
-            if (isMatch) {
-                snippetBuilder.append("<b>").append(word).append("</b>").append(" ");
-            } else {
-                snippetBuilder.append(word).append(" ");
+            boolean isMatch = isMatch(cleanWord, searchTerms);
+            if (isMatch && !found) {
+                appendEllipsisIfNecessary(snippetBuilder, totalLength);
+                found = true;
             }
-            snippetLength += word.length() + 1;
-            if (snippetLength > 400) break;
+            if (found) {
+                appendWordToSnippet(snippetBuilder, word, isMatch);
+                if (snippetBuilder.length() > 500) break;
+            }
+            totalLength += word.length() + 1;
         }
         return snippetBuilder.toString().trim();
+    }
+
+    private boolean isMatch(String cleanWord, Set<String> searchTerms) {
+        List<String> wordBaseForms = textProcessorService.getWordBaseForms(cleanWord);
+        return wordBaseForms.stream().anyMatch(searchTerms::contains);
+    }
+
+    private void appendEllipsisIfNecessary(StringBuilder snippetBuilder, int totalLength) {
+        if (totalLength > 200) {
+            snippetBuilder.append("... ");
+        }
+    }
+
+    private void appendWordToSnippet(StringBuilder snippetBuilder, String word, boolean isMatch) {
+        if (isMatch) {
+            snippetBuilder.append("<b>").append(word).append("</b>").append(" ");
+        } else {
+            snippetBuilder.append(word).append(" ");
+        }
+    }
+
+    private String highlightTitle(String title, Set<String> searchTerms) {
+        String[] words = title.split("\\s+");
+        StringBuilder titleBuilder = new StringBuilder();
+        for (String word : words) {
+            String cleanWord = word.toLowerCase().replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
+            boolean isMatch = isMatch(cleanWord, searchTerms);
+            appendWordToSnippet(titleBuilder, word, isMatch);
+        }
+        return titleBuilder.toString().trim();
     }
 }
