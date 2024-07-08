@@ -13,7 +13,9 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.SiteRepository;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,7 +34,8 @@ public class SearchService {
         if (sortedLemmas.isEmpty() || pages.isEmpty()) {
             return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
         }
-        Map<Page, Float> relevanceMap = relevanceService.calculateRelevanceForPages(pages, lemmas);
+        ConcurrentMap<Page, Float> relevanceMap = pages.parallelStream()
+                .collect(Collectors.toConcurrentMap(Function.identity(), page -> relevanceService.calculateRelevanceForPage(page, lemmas)));
         float maxRelevance = relevanceService.findMaxRelevance(relevanceMap);
         List<SearchDto.SearchData> allResults = createSearchResults(relevanceMap, maxRelevance, lemmas);
         allResults.sort(Comparator.comparing(SearchDto.SearchData::getRelevance).reversed());
