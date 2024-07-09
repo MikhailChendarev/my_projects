@@ -34,20 +34,23 @@ public class PageService {
     public void processPage(SiteModel siteModel, String url) {
         try {
             Response response = Jsoup.connect(url).userAgent(userAgent).referrer(referrer).execute();
-            if (response.statusCode() >= 400) {
-                return;
+            String contentType = response.contentType();
+            if (contentType.startsWith("text/") || contentType.endsWith("/xml") || contentType.endsWith("+xml")) {
+                if (response.statusCode() >= 400) {
+                    return;
+                }
+                Document doc = response.parse();
+                String path = getPathFromUrl(url, siteModel);
+                Page page = pageRepository.findByPathAndSiteModel(path, siteModel);
+                if (page != null) {
+                    deleteUnusedIndices(page);
+                } else {
+                    page = createNewPageModel(path, doc, response, siteModel);
+                }
+                Map<String, Integer> lemmas = textProcessorService.getLemmas(doc.body().text());
+                saveLemmasAndCreateIndex(lemmas, page);
+                updateSiteModel(siteModel);
             }
-            Document doc = response.parse();
-            String path = getPathFromUrl(url, siteModel);
-            Page page = pageRepository.findByPathAndSiteModel(path, siteModel);
-            if (page != null) {
-                deleteUnusedIndices(page);
-            } else {
-                page = createNewPageModel(path, doc, response, siteModel);
-            }
-            Map<String, Integer> lemmas = textProcessorService.getLemmas(doc.body().text());
-            saveLemmasAndCreateIndex(lemmas, page);
-            updateSiteModel(siteModel);
         } catch (Exception e) {
             handleException(e, siteModel);
         }
