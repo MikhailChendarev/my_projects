@@ -109,12 +109,12 @@ public class SearchService {
     }
 
     private String createSnippet(String htmlContent, Set<String> searchTerms) {
-        String[] words = Jsoup.parse(htmlContent).body().text().split("\\s+");;
+        String[] words = Jsoup.parse(htmlContent).body().text().split("\\s+");
         int totalLength = 0;
         boolean found = false;
         StringBuilder snippetBuilder = new StringBuilder();
         for (String word : words) {
-            String cleanWord = word.toLowerCase().replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
+            String cleanWord = textProcessorService.cleanWord(word);
             boolean isMatch = isMatch(cleanWord, searchTerms);
             if (isMatch && !found) {
                 appendEllipsisIfNecessary(snippetBuilder, totalLength);
@@ -152,7 +152,7 @@ public class SearchService {
         String[] words = title.split("\\s+");
         StringBuilder titleBuilder = new StringBuilder();
         for (String word : words) {
-            String cleanWord = word.toLowerCase().replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
+            String cleanWord = textProcessorService.cleanWord(word);
             boolean isMatch = isMatch(cleanWord, searchTerms);
             appendWordToSnippet(titleBuilder, word, isMatch);
         }

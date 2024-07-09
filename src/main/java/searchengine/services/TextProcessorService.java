@@ -13,6 +13,11 @@ public class TextProcessorService {
     private final LuceneMorphology russianMorphology;
     private final LuceneMorphology englishMorphology;
     private final Map<String, List<String>> baseFormsCache = new ConcurrentHashMap<>();
+    private final String WORD_CLEANUP_REGEX = "[^а-яА-ЯёЁa-zA-Z]";
+
+    public String cleanWord(String word) {
+        return word.toLowerCase().replaceAll(WORD_CLEANUP_REGEX, "");
+    }
 
     public TextProcessorService() {
         try {
@@ -26,7 +31,7 @@ public class TextProcessorService {
     public Map<String, Integer> getLemmas(String text) {
         Map<String, Integer> lemmas = new ConcurrentHashMap<>();
         Arrays.stream(text.toLowerCase().split("\\s+")).parallel().forEach(word -> {
-            word = word.replaceAll("[^а-яА-ЯёЁa-zA-Z]", "");
+            word = cleanWord(word);
             if (!word.isEmpty()) {
                 getWordBaseForms(word).forEach(baseForm -> lemmas.merge(baseForm, 1, Integer::sum));
             }
