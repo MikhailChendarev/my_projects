@@ -35,7 +35,7 @@ public class SearchService {
             return SearchDto.builder().result(true).count(0).data(new ArrayList<>()).build();
         }
         ConcurrentMap<Page, Float> relevanceMap = pages.parallelStream()
-                .collect(Collectors.toConcurrentMap(Function.identity(), page -> relevanceService.calculateRelevanceForPage(page, lemmas)));
+                .collect(Collectors.toConcurrentMap(Function.identity(), page -> relevanceService.calculateRelevanceForPage(lemmas)));
         float maxRelevance = relevanceService.findMaxRelevance(relevanceMap);
         List<SearchDto.SearchData> allResults = createSearchResults(relevanceMap, maxRelevance, lemmas);
         allResults.sort(Comparator.comparing(SearchDto.SearchData::getRelevance).reversed());
@@ -66,23 +66,22 @@ public class SearchService {
     }
 
     private List<Page> getPages(List<String> lemmas, BiFunction<Lemma, SiteModel, List<Page>> findPages, SiteModel siteModel) {
-        List<Page> pages = new ArrayList<>();
+        Map<Page, Long> pageCounts = new HashMap<>();
         for (String lemma : lemmas) {
             Lemma lemmaModel = lemmaRepository.findByLemma(lemma);
             if (lemmaModel != null) {
                 List<Page> pagesForLemma = findPages.apply(lemmaModel, siteModel);
-                if (!pagesForLemma.isEmpty()) {
-                    if (pages.isEmpty()) {
-                        pages.addAll(pagesForLemma);
-                    } else {
-                        pages.retainAll(pagesForLemma);
-                    }
+                for (Page page : pagesForLemma) {
+                    pageCounts.put(page, pageCounts.getOrDefault(page, 0L) + 1);
                 }
             } else {
                 return new ArrayList<>();
             }
         }
-        return pages;
+        return pageCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() == lemmas.size())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     private List<Page> getPagesByLemmas(List<String> lemmas) {

@@ -11,6 +11,7 @@ import searchengine.model.Lemma;
 import searchengine.model.Page;
 import searchengine.model.SiteModel;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -22,9 +23,10 @@ public interface IndexRepository extends JpaRepository<Index, Long> {
     List<Index> findByPage(Page page);
     int countByLemma(Lemma lemma);
     int countByPageIn(List<Page> pages);
-    List<Index> findByPageAndLemma(Page page, Lemma lemma);
     @Query("SELECT i.page FROM Index i WHERE i.lemma.lemma = :lemma")
     List<Page> findPagesByLemma(@Param("lemma") String lemma);
     @Query("SELECT i.page FROM Index i WHERE i.lemma = :lemma AND i.page.siteModel = :siteModel")
     List<Page> findPagesByLemmaAndSiteModel(@Param("lemma") Lemma lemma, @Param("siteModel") SiteModel siteModel);
+    @Query("SELECT i FROM Index i WHERE i.lemma IN :lemmas")
+    List<Index> findAllByLemmas(@Param("lemmas") Collection<Lemma> lemmas);
 }

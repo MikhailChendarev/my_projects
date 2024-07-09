@@ -7,6 +7,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.model.Lemma;
 
+import java.util.Collection;
+import java.util.Set;
+
 @Repository
 public interface LemmaRepository extends JpaRepository<Lemma, Long> {
     @Modifying
@@ -14,4 +17,5 @@ public interface LemmaRepository extends JpaRepository<Lemma, Long> {
     @Query(value = "DELETE FROM Lemma", nativeQuery = true)
     void deleteAllNative();
     Lemma findByLemma(String lemma);
+    Set<Lemma> findByLemmaIn(Collection<String> lemmas);
 }
