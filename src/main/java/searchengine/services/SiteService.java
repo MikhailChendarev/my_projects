@@ -13,7 +13,6 @@ import searchengine.repositories.SiteRepository;
 
 import javax.annotation.PostConstruct;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
