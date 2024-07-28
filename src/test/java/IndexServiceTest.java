@@ -1,10 +1,8 @@
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import searchengine.Application;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
@@ -22,7 +20,6 @@ import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
 public class IndexServiceTest {
 
@@ -38,7 +35,7 @@ public class IndexServiceTest {
     @MockBean
     private SitesList sitesList;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Site site1 = new Site("http://testsite1.com", "TestSite1");
         Site site2 = new Site("http://testsite2.com", "TestSite2");

@@ -1,10 +1,8 @@
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import searchengine.Application;
 import searchengine.config.SitesList;
 import searchengine.model.Lemma;
@@ -17,10 +15,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
 public class LemmaServiceTest {
 
@@ -83,3 +80,4 @@ public class LemmaServiceTest {
         assertEquals(threadsCount * lemmaCountPerThread, lemma.getFrequency().intValue());
     }
 }
+
