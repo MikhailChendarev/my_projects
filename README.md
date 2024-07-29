@@ -16,13 +16,13 @@ SearchEngine - это веб-приложение, разработанное д
 /api/search: Выполняет поиск по указанному запросу. Если запрос пуст, будет возвращено исключение. Если указанный сайт не найден, будет возвращено исключение.
 
 Зависимости:
-Spring Boot
-Thymeleaf
-Lombok
-Spring Data JPA
-PostgreSQL
-Jsoup
-Lucene Morphology: Библиотека для морфологического анализа текста.
-Liquibase
-JUnit
-Mockito
+Spring Boot,
+Thymeleaf,
+Lombok,
+Spring Data JPA,
+PostgreSQL,
+Jsoup,
+Lucene Morphology,
+Liquibase,
+JUnit,
+Mockito.
