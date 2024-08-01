@@ -58,9 +58,7 @@ public class SiteServiceTest {
         site.setUrl("http://test.com");
         when(sitesList.getSites()).thenReturn(List.of(site));
         when(siteRepository.findByUrl(anyString())).thenReturn(null);
-
         siteService.init();
-
         verify(siteRepository, times(1)).save(any(SiteModel.class));
     }
 
@@ -96,13 +94,8 @@ public class SiteServiceTest {
         site.setUrl(url);
         when(sitesList.getSites()).thenReturn(List.of(site));
         when(siteRepository.findByUrl(url)).thenReturn(new SiteModel());
-
         Optional<SiteModel> result = siteService.indexPage(url);
         assertTrue(result.isPresent());
         verify(pageService, times(1)).processPage(any(SiteModel.class), eq(url));
     }
 }
-
-
-
-

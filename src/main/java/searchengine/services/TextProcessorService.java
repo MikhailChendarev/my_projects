@@ -39,7 +39,7 @@ public class TextProcessorService {
         return lemmas;
     }
 
-    List<String> getWordBaseForms(String word) {
+    public List<String> getWordBaseForms(String word) {
         return baseFormsCache.computeIfAbsent(word, this::calculateBaseForms);
     }
 
