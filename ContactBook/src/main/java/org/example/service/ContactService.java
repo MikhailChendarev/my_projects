@@ -2,7 +2,6 @@ package org.example.service;
 
 
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import org.example.model.Contact;
 import org.springframework.stereotype.Service;
 
@@ -28,14 +27,16 @@ public class ContactService {
 
     public void addContact(Contact contact) {
         contacts.add(contact);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
+            writer.write(contact.getName() + ";" + contact.getPhoneNumber() + ";" + contact.getEmail());
+            writer.newLine();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void removeContactByEmail(String email) {
         contacts.removeIf(contact -> contact.getEmail().equals(email));
-    }
-
-    @PreDestroy
-    public void saveContactsToFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             for (Contact contact : contacts) {
                 writer.write(contact.getName() + ";" + contact.getPhoneNumber() + ";" + contact.getEmail());
@@ -91,6 +92,13 @@ public class ContactService {
 
     public void clearContacts() {
         contacts.clear();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            for (Contact contact : contacts) {
+                writer.write(contact.getName() + ";" + contact.getPhoneNumber() + ";" + contact.getEmail());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
 }
