@@ -7,7 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class Contact {
 
-    private String fullName;
+    private String name;
 
     private String phoneNumber;
 

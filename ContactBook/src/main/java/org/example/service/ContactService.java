@@ -1,6 +1,8 @@
 package org.example.service;
 
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.example.model.Contact;
 import org.springframework.stereotype.Service;
 
@@ -11,9 +13,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ContactService {
+
+    private final String filePath = "ContactBook/src/main/resources/contacts.txt";
+
     private Set<Contact> contacts = new HashSet<>();
 
     public Set<Contact> getAllContacts() {
@@ -28,10 +34,11 @@ public class ContactService {
         contacts.removeIf(contact -> contact.getEmail().equals(email));
     }
 
-    public void saveContactsToFile(String filePath) {
+    @PreDestroy
+    public void saveContactsToFile() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             for (Contact contact : contacts) {
-                writer.write(contact.getFullName() + ";" + contact.getPhoneNumber() + ";" + contact.getEmail());
+                writer.write(contact.getName() + ";" + contact.getPhoneNumber() + ";" + contact.getEmail());
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -39,7 +46,8 @@ public class ContactService {
         }
     }
 
-    public void loadContactsFromFile(String filePath) {
+    @PostConstruct
+    public void loadContactsFromFile() {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -53,5 +61,35 @@ public class ContactService {
             e.printStackTrace();
         }
     }
-}
 
+    public Set<Contact> searchContactByName(String name) {
+        return contacts.stream()
+                .filter(contact -> contact.getName().equals(name))
+                .collect(Collectors.toSet());
+    }
+
+    public Set<Contact> searchContactByPhoneNumber(String phoneNumber) {
+        return contacts.stream()
+                .filter(contact -> contact.getPhoneNumber().equals(phoneNumber))
+                .collect(Collectors.toSet());
+    }
+
+    public Set<Contact> searchContactByEmail(String email) {
+        return contacts.stream()
+                .filter(contact -> contact.getEmail().equals(email))
+                .collect(Collectors.toSet());
+    }
+
+    public void clearContacts() {
+        contacts.clear();
+    }
+
+    public void removeContact(Contact contact) {
+        contacts.remove(contact);
+    }
+
+    public void updateContact(Contact oldContact, Contact newContact) {
+        contacts.remove(oldContact);
+        contacts.add(newContact);
+    }
+}
