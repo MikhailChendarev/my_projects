@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @Service
 public class ContactService {
 
-    private final String filePath = "ContactBook/src/main/resources/contacts.txt";
+    private final String filePath = "C:/Users/User/Desktop/searchEngine/ContactBook/src/main/resources/contacts.txt";
 
     private Set<Contact> contacts = new HashSet<>();
 
@@ -60,6 +60,15 @@ public class ContactService {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        System.out.println("Welcome to the Contact Book Application!");
+        System.out.println("Available commands:");
+        System.out.println("1 - Add a new contact");
+        System.out.println("2 - Search contact by name");
+        System.out.println("3 - Search contact by phone number");
+        System.out.println("4 - Search contact by email");
+        System.out.println("5 - Get all contacts");
+        System.out.println("6 - Clear all contacts");
+        System.out.println("7 - Delete contact by email");
     }
 
     public Set<Contact> searchContactByName(String name) {
@@ -84,12 +93,4 @@ public class ContactService {
         contacts.clear();
     }
 
-    public void removeContact(Contact contact) {
-        contacts.remove(contact);
-    }
-
-    public void updateContact(Contact oldContact, Contact newContact) {
-        contacts.remove(oldContact);
-        contacts.add(newContact);
-    }
 }
