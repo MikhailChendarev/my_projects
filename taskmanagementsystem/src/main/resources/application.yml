@@ -15,8 +15,13 @@ spring:
     show-sql: true
   security:
     user:
-      password: password
+      name: postgres
+      password: postgres
   logging:
     level:
-      org.springframework: DEBUG
-      org.hibernate: DEBUG
+      org:
+        springframework: DEBUG
+        hibernate: DEBUG
+jwt:
+  secret: postgres
+  expiration: 3600000
