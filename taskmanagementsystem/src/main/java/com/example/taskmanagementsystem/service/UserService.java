@@ -17,6 +17,7 @@ public class UserService {
 
     public UserDto createUser(UserDto userDto) {
         User user = mapToEntity(userDto);
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         User savedUser = userRepository.save(user);
         return mapToDto(savedUser);
     }
@@ -30,11 +31,9 @@ public class UserService {
     public UserDto updatePassword(Long userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new ResourceNotFoundException("User with id: " + userId + " not found"));
-
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect");
         }
-
         user.setPassword(passwordEncoder.encode(newPassword));
         User updatedUser = userRepository.save(user);
         return mapToDto(updatedUser);

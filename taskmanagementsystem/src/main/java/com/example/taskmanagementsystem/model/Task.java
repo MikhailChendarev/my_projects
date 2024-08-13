@@ -2,6 +2,7 @@ package com.example.taskmanagementsystem.model;
 
 import com.example.taskmanagementsystem.enums.Priority;
 import com.example.taskmanagementsystem.enums.Status;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,6 +10,8 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Task {
 
     @Id
