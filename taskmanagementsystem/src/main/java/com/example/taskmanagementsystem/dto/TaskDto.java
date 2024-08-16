@@ -25,7 +25,6 @@ public class TaskDto {
     @NotNull(message = "Priority is mandatory")
     private Priority priority;
 
-    @NotNull(message = "Author ID is mandatory")
     private Long authorId;
 
     private Long assigneeId;

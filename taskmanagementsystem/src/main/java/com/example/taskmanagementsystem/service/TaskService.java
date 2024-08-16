@@ -7,21 +7,30 @@ import com.example.taskmanagementsystem.exception.ResourceNotFoundException;
 import com.example.taskmanagementsystem.model.Task;
 import com.example.taskmanagementsystem.model.User;
 import com.example.taskmanagementsystem.repository.TaskRepository;
+import com.example.taskmanagementsystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
     public TaskDto createTask(TaskDto taskDto) {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + currentUserEmail));
+        taskDto.setAuthorId(currentUser.getId());
+        log.info("Author ID set to: {}", taskDto.getAuthorId());
         Task task = mapToEntity(taskDto);
         Task savedTask = taskRepository.save(task);
         return mapToDto(savedTask);

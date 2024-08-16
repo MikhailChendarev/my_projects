@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/comments")
 @RequiredArgsConstructor
@@ -20,6 +22,12 @@ public class CommentController {
     public ResponseEntity<CommentDto> addComment(@Valid @RequestBody CommentDto commentDto) {
         CommentDto createdComment = commentService.addComment(commentDto);
         return ResponseEntity.ok(createdComment);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CommentDto>> getAllComments() {
+        List<CommentDto> comments = commentService.getAllComments();
+        return ResponseEntity.ok(comments);
     }
 
     @GetMapping("/task/{taskId}")
