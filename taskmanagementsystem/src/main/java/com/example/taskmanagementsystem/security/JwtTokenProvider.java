@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,16 +19,13 @@ import java.util.Date;
 
 @Slf4j
 @Component
-@AllArgsConstructor
-@NoArgsConstructor
 public class JwtTokenProvider {
 
     private SecretKey jwtSecretKey;
 
-    private String jwtSecret;
-
     private int jwtExpiration;
 
+    @Autowired
     public JwtTokenProvider(@Value("${jwt.secret}") String jwtSecret, @Value("${jwt.expiration}") int jwtExpiration) {
         this.jwtSecretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes());
         this.jwtExpiration = jwtExpiration;
@@ -41,7 +39,7 @@ public class JwtTokenProvider {
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(jwtSecretKey, SignatureAlgorithm.HS512)
+                .signWith(jwtSecretKey, SignatureAlgorithm.HS256)
                 .compact();
         log.info("Generated JWT Token for user: {}", userDetails.getUsername());
         return token;

@@ -25,7 +25,7 @@ spring:
         springframework: DEBUG
         hibernate: DEBUG
 jwt:
-  secret: postgres
+  secret: hjg;hg89ufgWJOJH329F8JZRIG948WDU9DGJKhfh
   expiration: 3600000
 springdoc:
   api-docs:
