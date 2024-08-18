@@ -8,6 +8,8 @@ import com.example.taskmanagementsystem.model.Comment;
 import com.example.taskmanagementsystem.model.Task;
 import com.example.taskmanagementsystem.model.User;
 import com.example.taskmanagementsystem.repository.CommentRepository;
+import com.example.taskmanagementsystem.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,8 +18,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class CommentServiceTest {
@@ -27,6 +33,20 @@ public class CommentServiceTest {
 
     @InjectMocks
     private CommentService commentService;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
+    @BeforeEach
+    void setUp() {
+        SecurityContextHolder.setContext(securityContext);
+    }
 
     @Test
     void testAddComment() {
@@ -41,6 +61,9 @@ public class CommentServiceTest {
                 .task(task)
                 .author(author)
                 .build();
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("test@example.com");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(author));
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
         CommentDto savedCommentDto = commentService.addComment(commentDto);
         assertNotNull(savedCommentDto);

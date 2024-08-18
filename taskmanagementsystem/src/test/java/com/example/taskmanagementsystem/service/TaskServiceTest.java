@@ -9,6 +9,8 @@ import com.example.taskmanagementsystem.enums.Status;
 import com.example.taskmanagementsystem.model.Task;
 import com.example.taskmanagementsystem.model.User;
 import com.example.taskmanagementsystem.repository.TaskRepository;
+import com.example.taskmanagementsystem.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,6 +19,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -29,6 +34,20 @@ public class TaskServiceTest {
 
     @InjectMocks
     private TaskService taskService;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
+    @BeforeEach
+    void setUp() {
+        SecurityContextHolder.setContext(securityContext);
+    }
 
     @Test
     void testCreateTask() {
@@ -51,6 +70,9 @@ public class TaskServiceTest {
                 .author(author)
                 .assignee(assignee)
                 .build();
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("test@example.com");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(author));
         when(taskRepository.save(any(Task.class))).thenReturn(task);
         TaskDto savedTaskDto = taskService.createTask(taskDto);
         assertNotNull(savedTaskDto);
@@ -105,4 +127,3 @@ public class TaskServiceTest {
         verify(taskRepository, times(1)).delete(task);
     }
 }
-

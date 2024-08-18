@@ -79,4 +79,3 @@ public class UserServiceTest {
         assertEquals("encodedNewPassword", updatedUserDto.getPassword());
     }
 }
-
