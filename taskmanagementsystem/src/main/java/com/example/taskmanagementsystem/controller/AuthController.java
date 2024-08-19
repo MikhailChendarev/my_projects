@@ -3,15 +3,18 @@ package com.example.taskmanagementsystem.controller;
 import com.example.taskmanagementsystem.dto.UserDto;
 import com.example.taskmanagementsystem.security.JwtTokenProvider;
 import com.example.taskmanagementsystem.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controller for authentication.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -21,6 +24,12 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserService userService;
 
+    /**
+     * Authenticates a user and issues a JWT token.
+     *
+     * @param userDto user data
+     * @return JWT token
+     */
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody UserDto userDto) {
         try {
@@ -34,10 +43,15 @@ public class AuthController {
         }
     }
 
+    /**
+     * Registers a new user.
+     *
+     * @param userDto user data
+     * @return created user
+     */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserDto userDto) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDto userDto) {
         UserDto createdUser = userService.createUser(userDto);
         return ResponseEntity.ok(createdUser);
     }
 }
-

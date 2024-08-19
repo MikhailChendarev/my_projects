@@ -31,7 +31,6 @@ public class CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + currentUserEmail));
         commentDto.setAuthorId(currentUser.getId());
         log.info("Author ID set to: {}", commentDto.getAuthorId());
-
         Comment comment = mapToEntity(commentDto);
         Comment savedComment = commentRepository.save(comment);
         return mapToDto(savedComment);
