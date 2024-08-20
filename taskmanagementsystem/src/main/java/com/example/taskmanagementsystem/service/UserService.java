@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service for managing users.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -15,6 +18,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Creates a new user.
+     *
+     * @param userDto user data
+     * @return created user
+     */
     public UserDto createUser(UserDto userDto) {
         User user = mapToEntity(userDto);
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
@@ -22,12 +31,26 @@ public class UserService {
         return mapToDto(savedUser);
     }
 
+    /**
+     * Retrieves a user by email.
+     *
+     * @param email user's email
+     * @return user data
+     */
     public UserDto getUserByEmail(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() ->
                 new ResourceNotFoundException("User with email: " + email + " not found"));
         return mapToDto(user);
     }
 
+    /**
+     * Updates the password for a user.
+     *
+     * @param userId user's ID
+     * @param currentPassword current password
+     * @param newPassword new password
+     * @return updated user data
+     */
     public UserDto updatePassword(Long userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new ResourceNotFoundException("User with id: " + userId + " not found"));

@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service for managing comments.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,12 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Adds a new comment.
+     *
+     * @param commentDto comment data
+     * @return created comment
+     */
     public CommentDto addComment(CommentDto commentDto) {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(currentUserEmail)
@@ -36,10 +45,22 @@ public class CommentService {
         return mapToDto(savedComment);
     }
 
+    /**
+     * Retrieves all comments.
+     *
+     * @return list of all comments
+     */
     public List<CommentDto> getAllComments() {
         return commentRepository.findAll().stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves comments by task ID.
+     *
+     * @param taskId task ID
+     * @param pageable pagination information
+     * @return paginated list of comments
+     */
     public Page<CommentDto> getCommentsByTaskId(Long taskId, Pageable pageable) {
         return commentRepository.findByTaskId(taskId, pageable).map(this::mapToDto);
     }

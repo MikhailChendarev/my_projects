@@ -14,12 +14,14 @@ import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
+/**
+ * Provider for generating and validating JWT tokens.
+ */
 @Slf4j
 @Component
 public class JwtTokenProvider {
 
     private SecretKey jwtSecretKey;
-
     private int jwtExpiration;
 
     @Autowired
@@ -28,6 +30,12 @@ public class JwtTokenProvider {
         this.jwtExpiration = jwtExpiration;
     }
 
+    /**
+     * Generates a JWT token for the authenticated user.
+     *
+     * @param authentication authentication object
+     * @return generated JWT token
+     */
     public String generateToken(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         Date now = new Date();
@@ -42,6 +50,12 @@ public class JwtTokenProvider {
         return token;
     }
 
+    /**
+     * Extracts the user's email from the JWT token.
+     *
+     * @param token JWT token
+     * @return user's email
+     */
     public String getUserEmailFromJwt(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(jwtSecretKey)
@@ -53,6 +67,12 @@ public class JwtTokenProvider {
         return username;
     }
 
+    /**
+     * Validates the JWT token.
+     *
+     * @param authToken JWT token
+     * @return true if valid, false otherwise
+     */
     public boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder().setSigningKey(jwtSecretKey).build().parseClaimsJws(authToken);

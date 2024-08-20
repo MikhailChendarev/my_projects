@@ -17,6 +17,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+/**
+ * Service for managing tasks.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,12 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Creates a new task.
+     *
+     * @param taskDto task data
+     * @return created task
+     */
     public TaskDto createTask(TaskDto taskDto) {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(currentUserEmail)
@@ -36,28 +46,65 @@ public class TaskService {
         return mapToDto(savedTask);
     }
 
+    /**
+     * Retrieves tasks by author ID.
+     *
+     * @param authorId author's ID
+     * @param pageable pagination information
+     * @return paginated list of tasks
+     */
     public Page<TaskDto> getTasksByAuthorId(Long authorId, Pageable pageable) {
         return taskRepository.findByAuthorId(authorId, pageable).map(this::mapToDto);
     }
 
+    /**
+     * Retrieves tasks by assignee ID.
+     *
+     * @param assigneeId assignee's ID
+     * @param pageable pagination information
+     * @return paginated list of tasks
+     */
     public Page<TaskDto> getTasksByAssigneeId(Long assigneeId, Pageable pageable) {
         return taskRepository.findByAssigneeId(assigneeId, pageable).map(this::mapToDto);
     }
 
+    /**
+     * Deletes a task by ID.
+     *
+     * @param id task ID
+     */
     public void deleteTask(Long id) {
         taskRepository.delete(findByIdOrThrow(id));
     }
 
+    /**
+     * Updates a task.
+     *
+     * @param id task ID
+     * @param taskDto task data
+     * @return updated task
+     */
     public TaskDto updateTask(Long id, TaskDto taskDto) {
         findByIdOrThrow(id);
         Task updatedTask = taskRepository.save(mapToEntity(taskDto));
         return mapToDto(updatedTask);
     }
 
+    /**
+     * Retrieves all tasks.
+     *
+     * @return list of all tasks
+     */
     public List<TaskDto> getAllTasks() {
         return taskRepository.findAll().stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves a task by ID.
+     *
+     * @param id task ID
+     * @return task data
+     */
     public TaskDto getTaskById(Long id) {
         Task task = findByIdOrThrow(id);
         return mapToDto(task);
@@ -68,10 +115,24 @@ public class TaskService {
                 new ResourceNotFoundException("Task with id: " + id + " not found."));
     }
 
+    /**
+     * Retrieves tasks by status.
+     *
+     * @param status task status
+     * @param pageable pagination information
+     * @return paginated list of tasks
+     */
     public Page<TaskDto> getTasksByStatus(Status status, Pageable pageable) {
         return taskRepository.findByStatus(status, pageable).map(this::mapToDto);
     }
 
+    /**
+     * Retrieves tasks by priority.
+     *
+     * @param priority task priority
+     * @param pageable pagination information
+     * @return paginated list of tasks
+     */
     public Page<TaskDto> getTasksByPriority(Priority priority, Pageable pageable) {
         return taskRepository.findByPriority(priority, pageable).map(this::mapToDto);
     }
