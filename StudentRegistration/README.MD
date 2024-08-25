@@ -61,7 +61,7 @@
 
 2. Запустите контейнер:
     ```sh
-    docker run -p 8080:8080 student-registration
+    docker run -it --rm student-registration
     ```
 
 ## Настройки
